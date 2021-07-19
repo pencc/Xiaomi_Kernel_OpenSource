@@ -432,10 +432,10 @@ retry:
 		return -ENOMEM;
 
 	mutex_lock(&vs_block_ida_lock);
-	ret = ida_alloc_range(&vs_block_ida, 0, id, GFP_KERNEL);
+	id = ida_alloc_range(&vs_block_ida, 0, -1, GFP_KERNEL);
 	mutex_unlock(&vs_block_ida_lock);
 
-	if (ret == -EAGAIN)
+	if (id == -EAGAIN)
 		goto retry;
 
 	return id;

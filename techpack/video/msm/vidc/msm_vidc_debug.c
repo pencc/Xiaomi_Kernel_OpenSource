@@ -701,7 +701,7 @@ inline void update_log_ctxt(u32 sid, u32 session_type, u32 fourcc)
 	ctxt[sid-1].name[5] = '\0';
 }
 
-inline char *get_codec_name(u32 sid)
+char *get_codec_name(u32 sid)
 {
 	if (!sid || sid > MAX_SUPPORTED_INSTANCES)
 		return ".....";
@@ -715,7 +715,7 @@ inline char *get_codec_name(u32 sid)
  * 2xx -> allow only decoder prints
  * 4xx -> allow only cvp prints
  */
-inline bool is_print_allowed(u32 sid, u32 level)
+bool is_print_allowed(u32 sid, u32 level)
 {
 	if (!(msm_vidc_debug & level))
 		return false;

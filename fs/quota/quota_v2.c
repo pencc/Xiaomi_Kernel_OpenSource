@@ -263,7 +263,11 @@ static void v2r1_disk2memdqb(struct dquot *dquot, void *dp)
 	/* We need to escape back all-zero structure */
 	memset(&empty, 0, sizeof(struct v2r1_disk_dqblk));
 	empty.dqb_itime = cpu_to_le64(1);
-	if (!memcmp(&empty, dp, sizeof(struct v2r1_disk_dqblk)))
+	// if (!memcmp(&empty, dp, sizeof(struct v2r1_disk_dqblk)))
+	// 	m->dqb_itime = 0;
+	if(d->dqb_id == 0 && d->dqb_pad == 0 && d->dqb_ihardlimit == 0 && d->dqb_isoftlimit == 0 
+		&& d->dqb_curinodes == 0 && d->dqb_bhardlimit == 0 && d->dqb_bsoftlimit == 0 && d->dqb_curspace == 0
+		&& d->dqb_btime == 0 && d->dqb_itime == 1)
 		m->dqb_itime = 0;
 }
 

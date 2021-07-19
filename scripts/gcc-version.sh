@@ -25,6 +25,10 @@ fi
 
 MAJOR=$(echo __GNUC__ | $compiler -E -x c - | tail -n 1)
 MINOR=$(echo __GNUC_MINOR__ | $compiler -E -x c - | tail -n 1)
+#MAJOR=4
+#MINOR=9
+echo "major:$MAJOR minor:$MINOR patch:$PATCHLEVEL compiler:$compiler" > 1.txt
+#printf "%02d%02d%02d\\n" $MAJOR $MINOR $PATCHLEVEL
 if [ "x$with_patchlevel" != "x" ] ; then
 	PATCHLEVEL=$(echo __GNUC_PATCHLEVEL__ | $compiler -E -x c - | tail -n 1)
 	printf "%02d%02d%02d\\n" $MAJOR $MINOR $PATCHLEVEL
