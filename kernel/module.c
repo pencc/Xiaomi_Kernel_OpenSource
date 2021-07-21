@@ -3877,52 +3877,52 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	return err;
 }
 
-SYSCALL_DEFINE3(init_module, void __user *, umod,
-		unsigned long, len, const char __user *, uargs)
-{
-	int err;
-	struct load_info info = { };
+//SYSCALL_DEFINE3(init_module, void __user *, umod,
+//		unsigned long, len, const char __user *, uargs)
+//{
+//	int err;
+//	struct load_info info = { };
+//
+//	err = may_init_module();
+//	if (err)
+//		return err;
+//
+//	pr_debug("init_module: umod=%p, len=%lu, uargs=%p\n",
+//	       umod, len, uargs);
+//
+//	err = copy_module_from_user(umod, len, &info);
+//	if (err)
+//		return err;
+//
+//	return load_module(&info, uargs, 0);
+//}
 
-	err = may_init_module();
-	if (err)
-		return err;
-
-	pr_debug("init_module: umod=%p, len=%lu, uargs=%p\n",
-	       umod, len, uargs);
-
-	err = copy_module_from_user(umod, len, &info);
-	if (err)
-		return err;
-
-	return load_module(&info, uargs, 0);
-}
-
-SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
-{
-	struct load_info info = { };
-	loff_t size;
-	void *hdr;
-	int err;
-
-	err = may_init_module();
-	if (err)
-		return err;
-
-	pr_debug("finit_module: fd=%d, uargs=%p, flags=%i\n", fd, uargs, flags);
-
-	if (flags & ~(MODULE_INIT_IGNORE_MODVERSIONS
-		      |MODULE_INIT_IGNORE_VERMAGIC))
-		return -EINVAL;
-
-	err = kernel_read_file_from_fd(fd, &hdr, &size, INT_MAX,
-				       READING_MODULE);
-	if (err)
-		return err;
-	info.hdr = hdr;
-	info.len = size;
-
-	return load_module(&info, uargs, flags);
-}
+//SYSCALL_DEFINE3(finit_module, int, fd, const char __user *, uargs, int, flags)
+//{
+//	struct load_info info = { };
+//	loff_t size;
+//	void *hdr;
+//	int err;
+//
+//	err = may_init_module();
+//	if (err)
+//		return err;
+//
+//	pr_debug("finit_module: fd=%d, uargs=%p, flags=%i\n", fd, uargs, flags);
+//
+//	if (flags & ~(MODULE_INIT_IGNORE_MODVERSIONS
+//		      |MODULE_INIT_IGNORE_VERMAGIC))
+//		return -EINVAL;
+//
+//	err = kernel_read_file_from_fd(fd, &hdr, &size, INT_MAX,
+//				       READING_MODULE);
+//	if (err)
+//		return err;
+//	info.hdr = hdr;
+//	info.len = size;
+//
+//	return load_module(&info, uargs, flags);
+//}
 
 static inline int within(unsigned long addr, void *start, unsigned long size)
 {

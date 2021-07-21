@@ -173,6 +173,8 @@
 #include "nan_ucfg_api.h"
 #include "wlan_osif_priv.h"
 
+#include <linux/b1c1_init.h>
+
 #ifdef MODULE
 #define WLAN_MODULE_NAME  module_name(THIS_MODULE)
 #else
@@ -203,7 +205,8 @@ static unsigned int dev_num = 1;
 static struct cdev wlan_hdd_state_cdev;
 static struct class *class;
 static dev_t device;
-#ifndef MODULE
+//#ifndef MODULE
+#if !defined(CONFIG_BOARD_B1C1)
 static struct gwlan_loader *wlan_loader;
 static ssize_t wlan_boot_cb(struct kobject *kobj,
 			    struct kobj_attribute *attr,
@@ -14433,7 +14436,8 @@ static void hdd_driver_unload(void)
 	hdd_qdf_deinit();
 }
 
-#ifndef MODULE
+//#ifndef MODULE
+#if !defined(CONFIG_BOARD_B1C1)
 /**
  * wlan_boot_cb() - Wlan boot callback
  * @kobj:      object whose directory we're creating the link in.
@@ -14559,7 +14563,8 @@ static int wlan_deinit_sysfs(void)
 
 #endif /* MODULE */
 
-#ifdef MODULE
+//#ifdef MODULE
+#if defined(CONFIG_BOARD_B1C1)
 /**
  * hdd_module_init() - Module init helper
  *
@@ -14588,7 +14593,8 @@ static int __init hdd_module_init(void)
 #endif
 
 
-#ifdef MODULE
+//#ifdef MODULE
+#if defined(CONFIG_BOARD_B1C1)
 /**
  * hdd_module_exit() - Exit function
  *
@@ -15705,7 +15711,8 @@ void hdd_hidden_ssid_enable_roaming(hdd_handle_t hdd_handle, uint8_t vdev_id)
 }
 
 /* Register the module init/exit functions */
-module_init(hdd_module_init);
+//module_init(hdd_module_init);
+b1c1_init(hdd_module_init, B1C1_WLAN);
 module_exit(hdd_module_exit);
 
 MODULE_LICENSE("Dual BSD/GPL");
