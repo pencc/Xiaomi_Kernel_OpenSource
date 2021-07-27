@@ -1,0 +1,16 @@
+https://www.youtube.com/watch?v=5aUP_Zgfa-I
+https://github.com/MiCode/Xiaomi_Kernel_OpenSource/issues/957
+
+$ git clone https://git.kernel.org/pub/scm/utils/dtc/dtc.git dtc-1.4.6 -b v1.4.6
+$ cd dtc-1.4.6
+$ make NO_PYTHON=1
+
+$ export ARCH=arm64
+$ export SUBARCH=arm64
+$ export DTC_EXT=/home/linx/Project/srcCode/Xiaomi_Kernel_OpenSource/dtc-1.4.6/dtc
+$ export CROSS_COMPILE=/home/linx/Project/srcCode/toolchain/bin/aarch64-linux-android-
+
+$ make O=out umi_user_defconfig
+$ make O=out
+
+$ abootimg -u boot.img  -k ./out/arch/arm64/boot/Image
