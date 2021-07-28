@@ -354,12 +354,12 @@ static inline void walt_task_dump(struct task_struct *p)
 	int i, j = 0;
 	int buffsz = NR_CPUS * 16;
 
-	SCHED_PRINT(p->pid);
-	SCHED_PRINT(p->ravg.mark_start);
-	SCHED_PRINT(p->ravg.demand);
-	SCHED_PRINT(p->ravg.coloc_demand);
-	SCHED_PRINT(sched_ravg_window);
-	SCHED_PRINT(new_sched_ravg_window);
+	SCHED_PRINT((long long unsigned int)p->pid);
+	SCHED_PRINT((long long unsigned int)p->ravg.mark_start);
+	SCHED_PRINT((long long unsigned int)p->ravg.demand);
+	SCHED_PRINT((long long unsigned int)p->ravg.coloc_demand);
+	SCHED_PRINT((long long unsigned int)sched_ravg_window);
+	SCHED_PRINT((long long unsigned int)new_sched_ravg_window);
 
 	for (i = 0 ; i < nr_cpu_ids; i++)
 		j += scnprintf(buff + j, buffsz - j, "%u ",
@@ -373,10 +373,10 @@ static inline void walt_task_dump(struct task_struct *p)
 	printk_deferred("%s=%d (%s)\n", STRG(p->ravg.prev_window),
 			p->ravg.prev_window, buff);
 
-	SCHED_PRINT(p->last_wake_ts);
-	SCHED_PRINT(p->last_enqueued_ts);
-	SCHED_PRINT(p->misfit);
-	SCHED_PRINT(p->unfilter);
+	SCHED_PRINT((long long unsigned int)p->last_wake_ts);
+	SCHED_PRINT((long long unsigned int)p->last_enqueued_ts);
+	SCHED_PRINT((long long unsigned int)p->misfit);
+	SCHED_PRINT((long long unsigned int)p->unfilter);
 }
 
 static inline void walt_rq_dump(int cpu)
@@ -398,18 +398,18 @@ static inline void walt_rq_dump(int cpu)
 			cpu, rq->nr_running, tsk->pid, tsk->comm);
 
 	printk_deferred("==========================================");
-	SCHED_PRINT(rq->window_start);
-	SCHED_PRINT(rq->prev_window_size);
-	SCHED_PRINT(rq->curr_runnable_sum);
-	SCHED_PRINT(rq->prev_runnable_sum);
-	SCHED_PRINT(rq->nt_curr_runnable_sum);
-	SCHED_PRINT(rq->nt_prev_runnable_sum);
-	SCHED_PRINT(rq->cum_window_demand_scaled);
-	SCHED_PRINT(rq->task_exec_scale);
-	SCHED_PRINT(rq->grp_time.curr_runnable_sum);
-	SCHED_PRINT(rq->grp_time.prev_runnable_sum);
-	SCHED_PRINT(rq->grp_time.nt_curr_runnable_sum);
-	SCHED_PRINT(rq->grp_time.nt_prev_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->window_start);
+	SCHED_PRINT((long long unsigned int)rq->prev_window_size);
+	SCHED_PRINT((long long unsigned int)rq->curr_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->prev_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->nt_curr_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->nt_prev_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->cum_window_demand_scaled);
+	SCHED_PRINT((long long unsigned int)rq->task_exec_scale);
+	SCHED_PRINT((long long unsigned int)rq->grp_time.curr_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->grp_time.prev_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->grp_time.nt_curr_runnable_sum);
+	SCHED_PRINT((long long unsigned int)rq->grp_time.nt_prev_runnable_sum);
 	for (i = 0 ; i < NUM_TRACKED_WINDOWS; i++) {
 		printk_deferred("rq->load_subs[%d].window_start=%llu)\n", i,
 				rq->load_subs[i].window_start);
@@ -420,8 +420,8 @@ static inline void walt_rq_dump(int cpu)
 	}
 	if (!exiting_task(tsk))
 		walt_task_dump(tsk);
-	SCHED_PRINT(sched_capacity_margin_up[cpu]);
-	SCHED_PRINT(sched_capacity_margin_down[cpu]);
+	SCHED_PRINT((long long unsigned int)sched_capacity_margin_up[cpu]);
+	SCHED_PRINT((long long unsigned int)sched_capacity_margin_down[cpu]);
 }
 
 static inline void walt_dump(void)
@@ -430,13 +430,13 @@ static inline void walt_dump(void)
 
 	printk_deferred("============ WALT RQ DUMP START ==============\n");
 	printk_deferred("Sched ktime_get: %llu\n", sched_ktime_clock());
-	printk_deferred("Time last window changed=%lu\n",
+	printk_deferred("Time last window changed=%llu\n",
 			sched_ravg_window_change_time);
 	for_each_online_cpu(cpu) {
 		walt_rq_dump(cpu);
 	}
-	SCHED_PRINT(max_possible_capacity);
-	SCHED_PRINT(min_max_possible_capacity);
+	SCHED_PRINT((long long unsigned int)max_possible_capacity);
+	SCHED_PRINT((long long unsigned int)min_max_possible_capacity);
 
 	printk_deferred("============ WALT RQ DUMP END ==============\n");
 }
