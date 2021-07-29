@@ -1190,7 +1190,7 @@ define filechk_kernel.release
 endef
 
 # Store (new) KERNELRELEASE string in include/config/kernel.release
-include/config/kernel.release: $(srctree)/Makefile FORCE
+include/config/kernel.release: $(srctree)/Makefile
 	$(call filechk,kernel.release)
 
 # Additional helpers built in scripts/
