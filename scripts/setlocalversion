@@ -55,7 +55,7 @@ scm_version()
 			# running further git commands
 			if $short; then
 				#echo "+"
-				echo "-perf-g545a49d08f11"
+				#echo "-perf-g545a49d08f11"
 				return
 			fi
 			# If we are past a tagged commit (like
