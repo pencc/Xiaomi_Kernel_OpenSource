@@ -23,7 +23,10 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 
+#include <linux/ipc_logging.h>
+
 #include "mhi_qcom.h"
+
 
 struct arch_info {
 	struct mhi_dev *mhi_dev;

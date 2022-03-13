@@ -9,5 +9,8 @@ export KERNEL_DEFCONFIG=cmi_user_defconfig
 #set CONFIG_BUILD_ARM64_DT_OVERLAY=y
 #set BUILD_CONFIG=build.config.gki.aarch64
 
+cp kernel.release-10p out/include/config/kernel.release
+cp compile.h-10p out/include/generated/compile.h
+
 make O=$OUT REAL_CC=/home/linx/Project/srcCode/gauguin-r-oss/toolchains/llvm-Snapdragon_LLVM_for_Android_8.0/prebuilt/linux-x86_64/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- cmi_user_defconfig
 make -j$(nproc) O=$OUT REAL_CC=/home/linx/Project/srcCode/gauguin-r-oss/toolchains/llvm-Snapdragon_LLVM_for_Android_8.0/prebuilt/linux-x86_64/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- 
