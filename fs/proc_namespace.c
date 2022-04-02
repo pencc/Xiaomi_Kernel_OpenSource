@@ -18,6 +18,9 @@
 #include "pnode.h"
 #include "internal.h"
 
+#include <linux/file.h>
+#include <linux/sched/mm.h>
+
 static __poll_t mounts_poll(struct file *file, poll_table *wait)
 {
 	struct seq_file *m = file->private_data;
@@ -94,6 +97,30 @@ static void show_type(struct seq_file *m, struct super_block *sb)
 	}
 }
 
+static char* get_current_process_path(char* kbuf, int len)
+{
+	char *ret_ptr = NULL;
+	struct mm_struct *mm;
+	struct file *exe_file;
+
+	mm = get_task_mm(current);
+	if(!mm)
+		return NULL;
+	
+	exe_file = get_mm_exe_file(mm);
+	mmput(mm);
+
+	if(exe_file) {
+		ret_ptr = file_path(exe_file, kbuf, len);
+		if(IS_ERR(ret_ptr)) {
+			ret_ptr = NULL;
+		}
+		fput(exe_file);
+	}
+
+	return ret_ptr;
+}
+
 static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 {
 	struct proc_mounts *p = m->private;
@@ -101,6 +128,34 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
+	char pbuf[512];
+	char kbuf[512];
+	char *p_path;
+	char *k_path;
+
+	printk("k_path0: in get_current_process_path\n");
+	p_path = get_current_process_path(pbuf, sizeof(pbuf));
+	if(!p_path)
+		printk("show_mountinfo get_current_process_path failed\n");
+	else {
+		//if(strstr(cmdline, "machvec="))
+		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			printk("k_path1: %s\n", k_path);
+			goto out;
+		}
+
+		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			printk("k_path2: %s\n", k_path);
+			goto out;
+		}	
+			
+		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+			printk("k_path3: %s\n", r->mnt_devname);
+			goto out;
+		}	
+	}
 
 	if (sb->s_op->show_devname) {
 		err = sb->s_op->show_devname(m, mnt_path.dentry);
@@ -137,6 +192,34 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 	struct super_block *sb = mnt->mnt_sb;
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	int err;
+	char pbuf[512];
+	char kbuf[512];
+	char *p_path;
+	char *k_path;
+
+	p_path = get_current_process_path(pbuf, sizeof(pbuf));
+	if(!p_path)
+		printk("show_mountinfo get_current_process_path failed\n");
+	else {
+		//if(strstr(cmdline, "machvec="))
+		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			//printk("pcc1----------k_path: %s\n", k_path);
+			goto out;
+		}
+
+		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			//printk("pcc2----------k_path: %s\n", k_path);
+			goto out;
+		}	
+			
+		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+			//printk("pcc3----------k_path: %s\n", r->mnt_devname);
+			goto out;
+		}	
+	}
+		
 
 	seq_printf(m, "%i %i %u:%u ", r->mnt_id, r->mnt_parent->mnt_id,
 		   MAJOR(sb->s_dev), MINOR(sb->s_dev));
@@ -201,6 +284,33 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 	struct path mnt_path = { .dentry = mnt->mnt_root, .mnt = mnt };
 	struct super_block *sb = mnt_path.dentry->d_sb;
 	int err;
+	char pbuf[512];
+	char kbuf[512];
+	char *p_path;
+	char *k_path;
+
+	p_path = get_current_process_path(pbuf, sizeof(pbuf));
+	if(!p_path)
+		printk("show_mountinfo get_current_process_path failed\n");
+	else {
+		//if(strstr(cmdline, "machvec="))
+		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			//printk("pcc1----------k_path: %s\n", k_path);
+			goto out;
+		}
+
+		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
+		if(k_path && strstr(k_path, "magisk")) {
+			//printk("pcc2----------k_path: %s\n", k_path);
+			goto out;
+		}	
+			
+		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+			//printk("pcc3----------k_path: %s\n", r->mnt_devname);
+			goto out;
+		}	
+	}
 
 	/* device */
 	if (sb->s_op->show_devname) {

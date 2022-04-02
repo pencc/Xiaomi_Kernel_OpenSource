@@ -135,6 +135,8 @@ void seq_hex_dump(struct seq_file *m, const char *prefix_str, int prefix_type,
 int seq_path(struct seq_file *, const struct path *, const char *);
 int seq_file_path(struct seq_file *, struct file *, const char *);
 int seq_dentry(struct seq_file *, struct dentry *, const char *);
+char* seq_path_root_path(const struct path *path,
+		  const struct path *root, char *buf, int len);
 int seq_path_root(struct seq_file *m, const struct path *path,
 		  const struct path *root, const char *esc);
 

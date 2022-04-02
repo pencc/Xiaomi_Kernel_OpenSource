@@ -486,6 +486,19 @@ EXPORT_SYMBOL(seq_file_path);
 /*
  * Same as seq_path, but relative to supplied root.
  */
+char* seq_path_root_path(const struct path *path,
+		  const struct path *root, char *buf, int len)
+{
+	char *ret_buf;
+	
+	ret_buf = __d_path(path, root, buf, len);
+
+	return ret_buf;
+}
+
+/*
+ * Same as seq_path, but relative to supplied root.
+ */
 int seq_path_root(struct seq_file *m, const struct path *path,
 		  const struct path *root, const char *esc)
 {
@@ -512,6 +525,19 @@ int seq_path_root(struct seq_file *m, const struct path *path,
 
 	return res < 0 && res != -ENAMETOOLONG ? res : 0;
 }
+
+/*
+ * returns the path of the 'dentry' from the root of its filesystem.
+ */
+char* seq_dentry_path(struct dentry *dentry, char* buf, int len)
+{
+	char *ret_buf;
+
+	ret_buf = dentry_path(dentry, buf, len);
+
+	return ret_buf;
+}
+EXPORT_SYMBOL(seq_dentry_path);
 
 /*
  * returns the path of the 'dentry' from the root of its filesystem.
