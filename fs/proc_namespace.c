@@ -21,6 +21,8 @@
 #include <linux/file.h>
 #include <linux/sched/mm.h>
 
+int bootFlag = -1;
+
 static __poll_t mounts_poll(struct file *file, poll_table *wait)
 {
 	struct seq_file *m = file->private_data;
@@ -121,6 +123,20 @@ static char* get_current_process_path(char* kbuf, int len)
 	return ret_ptr;
 }
 
+// 0-ok
+void changeBootTime() {
+	bootFlag = 0;
+}
+EXPORT_SYMBOL(changeBootTime);
+
+// 0-ok
+static int checkBootTime() {
+	// if(jiffies_to_msecs(jiffies) > 8000)
+	// 	return 0;
+	//return bootFlag;
+	return 0;
+}
+
 static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 {
 	struct proc_mounts *p = m->private;
@@ -140,18 +156,18 @@ static int show_vfsmnt(struct seq_file *m, struct vfsmount *mnt)
 	else {
 		//if(strstr(cmdline, "machvec="))
 		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			printk("k_path1: %s\n", k_path);
 			goto out;
 		}
 
 		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			printk("k_path2: %s\n", k_path);
 			goto out;
 		}	
 			
-		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+		if(r->mnt_devname && !checkBootTime() && (strstr(r->mnt_devname, "magisk") || strstr(r->mnt_devname, "/system/bin"))) {
 			printk("k_path3: %s\n", r->mnt_devname);
 			goto out;
 		}	
@@ -203,18 +219,20 @@ static int show_mountinfo(struct seq_file *m, struct vfsmount *mnt)
 	else {
 		//if(strstr(cmdline, "machvec="))
 		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(strstr(k_path, "/system/bin"))
+			printk("ppath:%s; kpath:%s\n", p_path, k_path);
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			//printk("pcc1----------k_path: %s\n", k_path);
 			goto out;
 		}
 
 		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			//printk("pcc2----------k_path: %s\n", k_path);
 			goto out;
 		}	
 			
-		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+		if(r->mnt_devname && !checkBootTime() && (strstr(r->mnt_devname, "magisk") || strstr(r->mnt_devname, "/system/bin"))) {
 			//printk("pcc3----------k_path: %s\n", r->mnt_devname);
 			goto out;
 		}	
@@ -295,18 +313,20 @@ static int show_vfsstat(struct seq_file *m, struct vfsmount *mnt)
 	else {
 		//if(strstr(cmdline, "machvec="))
 		k_path = seq_dentry_path(mnt->mnt_root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(strstr(k_path, "/system/bin"))
+			printk("ppath:%s; kpath:%s\n", p_path, k_path);
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			//printk("pcc1----------k_path: %s\n", k_path);
 			goto out;
 		}
 
 		k_path = seq_path_root_path(&mnt_path, &p->root, kbuf, sizeof(kbuf));
-		if(k_path && strstr(k_path, "magisk")) {
+		if(k_path && !checkBootTime() && (strstr(k_path, "magisk") || strstr(k_path, "/system/bin"))) {
 			//printk("pcc2----------k_path: %s\n", k_path);
 			goto out;
 		}	
 			
-		if(r->mnt_devname && strstr(r->mnt_devname, "magisk")) {
+		if(r->mnt_devname && !checkBootTime() && (strstr(r->mnt_devname, "magisk") || strstr(r->mnt_devname, "/system/bin"))) {
 			//printk("pcc3----------k_path: %s\n", r->mnt_devname);
 			goto out;
 		}	

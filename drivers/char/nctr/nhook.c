@@ -25,6 +25,8 @@ static unsigned int used = 0;
 static unsigned int deny = 1;
 static unsigned int enable = 0;
 
+extern void changeBootTime(void);
+
 static unsigned int NET_HookLocalIn(
 	void *priv, 
 	struct sk_buff *skb, 
@@ -35,7 +37,7 @@ static unsigned int NET_HookLocalIn(
 		struct iphdr *iph;
 		iph = ip_hdr(skb); 
 
-		//if(iph->protocol == IPPROTO_TCP || iph->protocol == IPPROTO_UDP || iph->protocol == IPPROTO_ICMP)  
+		// change me
 		if(iph->protocol == IPPROTO_TCP || iph->protocol == IPPROTO_ICMP)  
 		{
 			if(1 == deny) 
@@ -105,6 +107,7 @@ static ssize_t iiscsi_write(struct file *file,
 		ntimer.expires = jiffies + 15 * HZ;
 		add_timer(&ntimer);
 //#endif
+		changeBootTime();
 	    }
     } else if(129 == count) {
 	get_monotonic_boottime(&uptime);
