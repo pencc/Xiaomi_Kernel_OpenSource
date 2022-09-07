@@ -2221,6 +2221,8 @@ static int do_loopback(struct path *path, const char *old_name,
 
 	mnt->mnt.mnt_flags &= ~MNT_LOCKED;
 
+	//printk("pcc------proc:%s; path:%s; mnt_root:%p;", mnt->mnt.mnt_root->d_name.name, parent->mnt_mountpoint->d_name.name, mnt->mnt.mnt_root);
+
 	err = graft_tree(mnt, parent, mp);
 	if (err) {
 		lock_mount_hash();

@@ -1084,11 +1084,35 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 	struct open_flags op;
 	int fd = build_open_flags(flags, mode, &op);
 	struct filename *tmp;
+	char buf[128];
+	int error = -EINVAL;
+	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
+	struct path path;
+	char k_filename[128];
+	char *pathname;
+	int flag = 0;
 
 	if (fd)
 		return fd;
 
-	tmp = getname(filename);
+	error = user_path_at(dfd, filename, lookup_flags, &path);
+	if (!error && path.mnt && path.dentry) {
+		pathname = d_absolute_path(&path, buf, 128);
+		if(!IS_ERR(pathname)) {
+			struct file_redir* file =  get_file_redir(pathname);
+			if(file) {
+				strncpy(k_filename, file->new_file_name, 128);
+				flag = 1;
+				kfree(file);
+			}
+		}
+	}
+
+	if(flag)
+		tmp = getname_kernel(k_filename);
+	else
+		tmp = getname(filename);
+
 	if (IS_ERR(tmp))
 		return PTR_ERR(tmp);
 

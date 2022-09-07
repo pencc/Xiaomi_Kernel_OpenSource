@@ -20,6 +20,28 @@
 
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
+#include <linux/list.h>
+#include <linux/file.h>
+#include <linux/sched/mm.h>
+
+struct stat_dev
+{
+	char file_name[128];
+	__u32 device;
+	struct list_head list;
+};
+static struct list_head stat_dev_list = LIST_HEAD_INIT(stat_dev_list);
+
+struct stat_size
+{
+	char file_name[128];
+	long long size;
+	long long blocks;
+	struct list_head list;
+};
+struct list_head stat_size_list = LIST_HEAD_INIT(stat_size_list);
+
+struct list_head file_redir_list = LIST_HEAD_INIT(file_redir_list);
 
 /**
  * generic_fillattr - Fill in the basic attributes from the inode struct
@@ -148,6 +170,142 @@ int vfs_statx_fd(unsigned int fd, struct kstat *stat,
 }
 EXPORT_SYMBOL(vfs_statx_fd);
 
+// 按添加先后顺序匹配，后添加的device覆盖先添加的
+int set_file_stat_device(const char *file_name, __u32 device)
+{
+	struct stat_dev *pstat_dev;
+	pstat_dev = kmalloc(sizeof(struct stat_dev), GFP_KERNEL);
+	// DEBUG
+	if(NULL == file_name || device < 0)
+		return -1;
+	strncpy(pstat_dev->file_name, file_name, 128);
+	pstat_dev->device = device;
+	list_add_tail(&pstat_dev->list, &stat_dev_list);
+	return 0;
+}
+EXPORT_SYMBOL(set_file_stat_device);
+
+__u32 get_file_stat_device(const char *file_name)
+{
+	struct stat_dev *pstat_dev;
+	if(NULL == file_name)
+		return 0;
+	//printk("pcc-----filename:%s;\n", file_name);
+	// char* tmp_name = NULL;
+	list_for_each_entry(pstat_dev, &stat_dev_list, list)
+	{
+		if(NULL == pstat_dev || NULL == pstat_dev->file_name)
+			return 0;
+		//printk("pcc-----file_name:%s;pstat_dev->file_name:%s;\n", file_name, pstat_dev->file_name);
+		if(!strncmp(file_name, pstat_dev->file_name, 128)) {
+			return pstat_dev->device;
+		}
+	}
+
+	return 0;
+}
+
+int set_file_stat_size(const char *file_name, long long size, long long blocks)
+{
+	struct stat_size *pstat_size;
+	pstat_size = kmalloc(sizeof(struct stat_size), GFP_KERNEL);
+	// DEBUG
+	if(NULL == file_name)
+		return -1;
+	strncpy(pstat_size->file_name, file_name, 128);
+	pstat_size->size = size;
+	pstat_size->blocks = blocks;
+	list_add_tail(&pstat_size->list, &stat_size_list);
+	return 0;
+}
+EXPORT_SYMBOL(set_file_stat_size);
+
+struct stat_size* get_file_stat_size(const char *file_name)
+{
+	struct stat_size *pstat_size;
+	struct stat_size *ret_size;
+	if(NULL == file_name)
+		return NULL;
+
+	list_for_each_entry(pstat_size, &stat_size_list, list)
+	{
+		if(NULL == pstat_size || NULL == pstat_size->file_name)
+			return NULL;
+		//printk("pcc-----file_name:%s;pstat_dev->file_name:%s;\n", file_name, pstat_dev->file_name);
+		if(!strncmp(file_name, pstat_size->file_name, 128)) {
+			ret_size = kmalloc(sizeof(struct stat_size), GFP_KERNEL);
+			ret_size->size = pstat_size->size;
+			ret_size->blocks = pstat_size->blocks;
+			return ret_size;
+		}
+	}
+
+	return NULL;
+}
+
+int set_file_redir(const char *file_name, const char *new_file_name)
+{
+	struct file_redir *pfile_redir;
+	pfile_redir = kmalloc(sizeof(struct file_redir), GFP_KERNEL);
+	// DEBUG
+	if(NULL == file_name || NULL == new_file_name)
+		return -1;
+	strncpy(pfile_redir->file_name, file_name, 128);
+	strncpy(pfile_redir->new_file_name, new_file_name, 128);
+
+	list_add_tail(&pfile_redir->list, &file_redir_list);
+	return 0;
+}
+EXPORT_SYMBOL(set_file_redir);
+
+struct file_redir* get_file_redir(const char *file_name)
+{
+	struct file_redir *pfile_redir;
+	struct file_redir *ret_file_redir;
+	if(NULL == file_name)
+		return NULL;
+
+	list_for_each_entry(pfile_redir, &file_redir_list, list)
+	{
+		if(NULL == pfile_redir || NULL == pfile_redir->file_name)
+			return NULL;
+		//printk("pcc-----file_name:%s;pstat_dev->file_name:%s;\n", file_name, pstat_dev->file_name);
+		if(!strncmp(file_name, pfile_redir->file_name, 128)) {
+			ret_file_redir = kmalloc(sizeof(struct file_redir), GFP_KERNEL);
+			strncpy(ret_file_redir->new_file_name, pfile_redir->new_file_name, 128);
+			return ret_file_redir;
+		}
+	}
+
+	return NULL;
+}
+EXPORT_SYMBOL(get_file_redir);
+
+static char* get_current_process_path(char* kbuf, int len)
+{
+	char *ret_ptr = NULL;
+	struct mm_struct *mm;
+	struct file *exe_file;
+
+	mm = get_task_mm(current);
+	if(!mm)
+		return NULL;
+	
+	exe_file = get_mm_exe_file(mm);
+	mmput(mm);
+
+	if(exe_file) {
+		ret_ptr = file_path(exe_file, kbuf, len);
+		if(IS_ERR(ret_ptr)) {
+			ret_ptr = NULL;
+		}
+		fput(exe_file);
+	}
+
+	return ret_ptr;
+}
+
+
 /**
  * vfs_statx - Get basic and extra attributes by filename
  * @dfd: A file descriptor representing the base dir for a relative filename
@@ -169,6 +327,21 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 	struct path path;
 	int error = -EINVAL;
 	unsigned int lookup_flags = LOOKUP_FOLLOW | LOOKUP_AUTOMOUNT;
+	char kbuf[512];
+	char *k_path;
+	__u32 device = 0;
+	char pbuf[512];
+	char *p_path;
+	struct stat_size* s_size;
+	char buf[128];
+	char *pathname = NULL;
+	int flag = 0;
+
+	char data_string[512];
+
+	p_path = get_current_process_path(pbuf, sizeof(pbuf));
+	if(!p_path)
+		printk("vfs_statx get_current_process_path failed\n");
 
 	if ((flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT |
 		       AT_EMPTY_PATH | KSTAT_QUERY_FLAGS)) != 0)
@@ -181,17 +354,55 @@ int vfs_statx(int dfd, const char __user *filename, int flags,
 	if (flags & AT_EMPTY_PATH)
 		lookup_flags |= LOOKUP_EMPTY;
 
-retry:
 	error = user_path_at(dfd, filename, lookup_flags, &path);
 	if (error)
 		goto out;
 
+	pathname = d_absolute_path(&path, buf, 128);
+	if(!IS_ERR(pathname)) {
+		struct file_redir* file =  get_file_redir(pathname);
+		if(file) {
+			strncpy(data_string, file->new_file_name, 512);
+			flag = 1;
+			kfree(file);
+		}
+	}
+
+	if(!flag)
+		copy_from_user(data_string, filename, 512);
+	else {
+		error = kern_path(data_string, lookup_flags, &path);
+		if (error)
+			goto out;
+	}
+
+retry:
 	error = vfs_getattr(&path, stat, request_mask, flags);
 	path_put(&path);
 	if (retry_estale(error, lookup_flags)) {
 		lookup_flags |= LOOKUP_REVAL;
 		goto retry;
 	}
+
+	if(p_path){
+		k_path = seq_dentry_path(path.dentry, kbuf, sizeof(kbuf));
+		device = get_file_stat_device(data_string);
+		if(device) {
+			//printk("pcc-----p_path1: %s; k_path: %s, dev:%d, device:%d\n", p_path, k_path, stat->dev, device);
+			stat->dev = device;
+			stat->changed = 1;
+		}
+		s_size = get_file_stat_size(data_string);
+		if(s_size) {
+			stat->size = s_size->size;
+			stat->blocks = s_size->blocks;
+			kfree(s_size);
+		}
+	}
+
+	// Device: fc05h/64517d  HEX_TO_DEC(fc)=252 HEX_TO_DEC(05)=5/
+	// stat->dev = HEX_TO_DEC(fc) * 256 + HEX_TO_DEC(05) = 252 * 256 + 5 = 64517
+	//printk("path:%s; dev:%d; major:%x; minor:%x\n", k_path, stat->dev, (stat->dev & ~0xff) >> 12, stat->dev & 0xff);
 out:
 	return error;
 }
@@ -297,15 +508,22 @@ static int cp_new_stat(struct kstat *stat, struct stat __user *statbuf)
 {
 	struct stat tmp;
 
-	if (!valid_dev(stat->dev) || !valid_dev(stat->rdev))
-		return -EOVERFLOW;
+	if(1 != stat->changed) {
+		if (!valid_dev(stat->dev) || !valid_dev(stat->rdev))
+			return -EOVERFLOW;
+	}
+
 #if BITS_PER_LONG == 32
 	if (stat->size > MAX_NON_LFS)
 		return -EOVERFLOW;
 #endif
 
 	INIT_STRUCT_STAT_PADDING(tmp);
-	tmp.st_dev = encode_dev(stat->dev);
+	if(1 != stat->changed) {
+		tmp.st_dev = encode_dev(stat->dev);
+	} else {
+		tmp.st_dev = stat->dev;
+	}
 	tmp.st_ino = stat->ino;
 	if (sizeof(tmp.st_ino) < sizeof(stat->ino) && tmp.st_ino != stat->ino)
 		return -EOVERFLOW;

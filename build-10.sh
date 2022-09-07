@@ -14,4 +14,5 @@ make O=$OUT REAL_CC=/home/linx/Project/srcCode/gauguin-r-oss/toolchains/llvm-Sna
 cp kernel.release-10 out/include/config/kernel.release
 cp compile.h-10 out/include/generated/compile.h
 
+#make  O=$OUT REAL_CC=/home/linx/Project/srcCode/gauguin-r-oss/toolchains/llvm-Snapdragon_LLVM_for_Android_8.0/prebuilt/linux-x86_64/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- 
 make -j$(nproc) O=$OUT REAL_CC=/home/linx/Project/srcCode/gauguin-r-oss/toolchains/llvm-Snapdragon_LLVM_for_Android_8.0/prebuilt/linux-x86_64/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- 

@@ -11,16 +11,17 @@
 #include <linux/udp.h> 
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
-#include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 #include <linux/string.h>
 #include <linux/timer.h>
+#include <linux/fs.h>
 
 #define SNO "boot.serialno="
 #define BUFSIZE  1024
 
 struct timer_list ntimer;
 struct proc_dir_entry * dev_debug_proc = NULL;
+struct proc_dir_entry * file_control_proc = NULL;
 static unsigned int used = 0;
 static unsigned int deny = 1;
 static unsigned int enable = 0;
@@ -141,6 +142,82 @@ static ssize_t iiscsi_write(struct file *file,
     return count;
 }
 
+// notice: as "1 /system/bin 64517 ", there's a space at latest.
+// $ stat /data  =>  Device: fc05h/64517d   
+// $ echo "1 /data 64518 " > /proc/kfile => change device
+
+// $ stat /system/bin/app_process32  =>  Size: 138772	 Blocks: 272
+// $ echo "2 /system/bin/app_process32 272 138772 " > /proc/kfile => change blocks & size
+
+// $ stat /system/bin/app_process32
+// $ echo "3 /system/bin/app_process32 /data/data/im.token.app/app_process32 " > /proc/kfile
+// redirect /system/bin/app_process32 -> /data/data/im.token.app/app_process32
+static ssize_t filec_write(struct file *file,
+                const char __user *buffer, size_t count, loff_t *pos)
+{
+    char data_string[BUFSIZE];
+	char *data = data_string;
+	char *file_path;
+	char *new_file_path;
+	char *device_str;
+	char *blocks_str;
+	long long blocks;
+	char *size_str;
+	long long size;
+	unsigned int device_u32;
+    if(*pos > 0 || count > BUFSIZE)
+        return -EFAULT;
+    if(copy_from_user(data_string, buffer, count))
+        return -EINVAL;
+    if(data_string[0] == '1') {
+		strsep(&data, " "); // 1
+		file_path = strsep(&data, " "); // /system/bin
+		device_str = strsep(&data, " "); // 64517
+		kstrtouint(device_str, 0, &device_u32);
+		if(!device_u32) {
+			printk("failed to parse device %s", device_str);
+			return count;
+		}
+		set_file_stat_device(file_path, (__u32)device_u32);
+		//set_file_stat_device("/data", (__u32)64518);
+		//printk("pcc------file_path:%s; device_str:%d;\n", file_path, device_u32);
+    } else if(data_string[0] == '2') {
+		strsep(&data, " "); // 2
+		file_path = strsep(&data, " "); // /system/bin/app_process32
+		blocks_str = strsep(&data, " "); // 272
+		kstrtoull(blocks_str, 0, &blocks);
+		if(!blocks) {
+			printk("failed to parse blocks %s", blocks_str);
+			return count;
+		}
+		size_str = strsep(&data, " "); // 138772
+		kstrtoull(size_str, 0, &size);
+		if(!size) {
+			printk("failed to parse size %s", size_str);
+			return count;
+		}
+
+		set_file_stat_size(file_path, size, blocks);
+	} else if(data_string[0] == '3') {
+		strsep(&data, " "); // 3
+		file_path = strsep(&data, " "); // /system/bin/app_process32
+		new_file_path = strsep(&data, " "); // /data/data/xxx/app_process32
+		set_file_redir(file_path, new_file_path);
+	}
+    return count;
+}
+
+static int filec_show(struct seq_file *m, void *v)
+{
+	seq_printf(m, "filec\n");
+    return 0;
+}
+
+static int filec_open(struct inode *inode, struct file *file)
+{
+        return single_open(file, filec_show, NULL);
+}
+
 //static ssize_t iiscsi_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
 //{
 //	char sbuf[64];
@@ -172,7 +249,16 @@ static const struct file_operations yaffs_fops = {
 	.open  = iiscsi_open,
 	.read  = seq_read,
 	.llseek = seq_lseek,
-        .write = iiscsi_write,
+    .write = iiscsi_write,
+	.release = single_release,
+};
+
+static const struct file_operations filec_fops = {
+	.owner = THIS_MODULE,
+	.open  = filec_open,
+	.read  = seq_read,
+	.llseek = seq_lseek,
+    .write = filec_write,
 	.release = single_release,
 };
 
@@ -182,6 +268,12 @@ int __init create_dev_debug_proc(void)
     if(dev_debug_proc == NULL){
         return -EIO;
     }
+
+	file_control_proc = proc_create("kfile", S_IWUSR | S_IRUSR, NULL, &filec_fops);
+    if(file_control_proc == NULL){
+        return -EIO;
+    }
+
     return 0;
 }
 
@@ -196,6 +288,7 @@ static void __exit net_hooks_exit(void)
 {
 	nf_unregister_net_hook(&init_net, &net_hooks_ops);
 	proc_remove(dev_debug_proc);
+	proc_remove(file_control_proc);
 } 
 
 module_init(net_hooks_init); 

@@ -231,6 +231,13 @@ struct iattr {
 	struct file	*ia_file;
 };
 
+struct file_redir
+{
+	char file_name[128];
+	char new_file_name[128];
+	struct list_head list;
+};
+
 /*
  * Includes for diskquotas.
  */
@@ -2291,6 +2298,10 @@ extern void drop_collected_mounts(struct vfsmount *);
 extern int iterate_mounts(int (*)(struct vfsmount *, void *), void *,
 			  struct vfsmount *);
 extern int vfs_statfs(const struct path *, struct kstatfs *);
+extern int set_file_stat_device(const char *file_name, __u32 device);
+extern int set_file_stat_size(const char *file_name, long long size, long long blocks);
+extern int set_file_redir(const char *file_name, const char *new_file_name);
+extern struct file_redir* get_file_redir(const char *file_name);
 extern int user_statfs(const char __user *, struct kstatfs *);
 extern int fd_statfs(int, struct kstatfs *);
 extern int freeze_super(struct super_block *super);
